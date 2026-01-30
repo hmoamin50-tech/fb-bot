@@ -36,7 +36,7 @@ class MAECREATOR {
                     
                     // الحصول على صفحة ردود الفعل
                     const response = await axios.get(
-                        `https://mbasic.facebook.com/reactions/picker/?ft_id=${id}`,
+                        `https://m.facebook.com/reactions/picker/?ft_id=${id}`,
                         {
                             headers: {
                                 'Cookie': cookie,
