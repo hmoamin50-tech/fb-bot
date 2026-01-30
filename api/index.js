@@ -34,45 +34,59 @@ class MAECREATOR {
                 try {
                     const cookie = this.cl[i];
                     
+                    // التحقق من صحة الكوكيز أولاً
+                    const validateResponse = await axios.get('https://m.facebook.com/me', {
+                        headers: {
+                            'Cookie': cookie,
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        },
+                        timeout: 10000
+                    });
+
+                    if (!validateResponse.data.includes('mbasic_logout_button')) {
+                        results.push(`الحساب ${i+1}: فشل - الكوكيز غير صالحة أو منتهية`);
+                        continue;
+                    }
+
                     // الحصول على صفحة ردود الفعل
                     const response = await axios.get(
-                        `https://m.facebook.com/reactions/picker/?ft_id=${id}`,
+                        `https://mbasic.facebook.com/reactions/picker/?ft_id=${id}`,
                         {
                             headers: {
                                 'Cookie': cookie,
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                                'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8',
-                                'Accept-Encoding': 'gzip, deflate, br',
-                                'Connection': 'keep-alive',
-                                'Upgrade-Insecure-Requests': '1'
+                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
                             },
-                            timeout: 30000
+                            timeout: 15000
                         }
                     );
 
                     const $ = cheerio.load(response.data);
-                    const links = $('a[href*="/ufi/reaction"]');
-                    
-                    if (links.length === 0) {
-                        results.push(`الحساب ${i+1}: فشل - لم يتم العثور على روابط ردود الفعل`);
-                        continue;
-                    }
-
                     let reactionLink = "";
-                    if (this.reactSelected < links.length) {
-                        reactionLink = $(links[this.reactSelected]).attr('href');
+                    
+                    // البحث عن رابط رد الفعل المحدد
+                    const reactLinks = $('a[href*="/a/react"]');
+                    if (reactLinks.length > 0 && this.reactSelected < reactLinks.length) {
+                        reactionLink = $(reactLinks[this.reactSelected]).attr('href');
                     } else {
-                        reactionLink = $(links[0]).attr('href');
+                        // محاولة ثانية بنمط مختلف
+                        const allLinks = $('a');
+                        allLinks.each((index, element) => {
+                            const href = $(element).attr('href');
+                            if (href && href.includes('/a/react')) {
+                                reactionLink = href;
+                                return false;
+                            }
+                        });
                     }
 
                     if (!reactionLink) {
-                        results.push(`الحساب ${i+1}: فشل - رابط التفاعل غير موجود`);
+                        results.push(`الحساب ${i+1}: فشل - لم يتم العثور على رابط التفاعل`);
                         continue;
                     }
 
                     // تنظيف الرابط
-                    let cleanLink = "https://mbasic.facebook.com" + reactionLink.replace(/amp;/g, '');
+                    let cleanLink = "https://m.facebook.com" + reactionLink.replace(/amp;/g, '');
 
                     // إرسال رد الفعل
                     const reactionResponse = await axios.get(cleanLink, {
@@ -81,12 +95,11 @@ class MAECREATOR {
                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                             'Referer': `https://mbasic.facebook.com/reactions/picker/?ft_id=${id}`
                         },
-                        maxRedirects: 5,
-                        timeout: 30000,
+                        timeout: 15000,
                         validateStatus: null
                     });
 
-                    if (reactionResponse.status === 200 || reactionResponse.status === 302) {
+                    if (reactionResponse.status >= 200 && reactionResponse.status < 400) {
                         results.push(`الحساب ${i+1}: نجح ✓`);
                     } else {
                         results.push(`الحساب ${i+1}: فشل - كود ${reactionResponse.status}`);
@@ -94,12 +107,16 @@ class MAECREATOR {
 
                 } catch (error) {
                     console.error(`خطأ في الحساب ${i+1}:`, error.message);
-                    results.push(`الحساب ${i+1}: فشل - ${error.message}`);
+                    if (error.message.includes('timeout')) {
+                        results.push(`الحساب ${i+1}: فشل - انتهت المهلة`);
+                    } else {
+                        results.push(`الحساب ${i+1}: فشل - ${error.message}`);
+                    }
                 }
                 
                 // تأخير بين الحسابات
                 if (i < this.cl.length - 1) {
-                    await this.sleep(3000);
+                    await this.sleep(2000 + Math.random() * 1000);
                 }
             }
             
@@ -116,13 +133,12 @@ class MAECREATOR {
     }
 }
 
-// API endpoint
 module.exports = async (req, res) => {
     // CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+    res.setHeader('Access-Control-Allow-Headers', '*');
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -149,9 +165,19 @@ module.exports = async (req, res) => {
 
             const mae = new MAECREATOR();
             
+            // إضافة الكوكيز بعد تنظيفها
             cookies.forEach(cookie => {
-                mae.ADDCOOKIE(cookie);
+                if (cookie && cookie.trim() !== '') {
+                    mae.ADDCOOKIE(cookie.trim());
+                }
             });
+
+            if (mae.cl.length === 0) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: "جميع الكوكيز غير صالحة" 
+                });
+            }
 
             if (reactType !== undefined) {
                 mae.SELECTREACT(reactType);
@@ -161,7 +187,7 @@ module.exports = async (req, res) => {
 
             return res.status(200).json({
                 success: true,
-                message: "تم إرسال ردود الفعل بنجاح",
+                message: `تم معالجة ${mae.cl.length} حساب`,
                 results: results
             });
 
@@ -177,10 +203,8 @@ module.exports = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Facebook React API",
-            endpoints: {
-                login: "POST /api/login",
-                react: "POST /api/"
-            }
+            version: "2.0",
+            features: ["Manual cookies", "Multiple reactions", "Batch processing"]
         });
     }
 };
