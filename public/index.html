@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook React Bot - بوت ردود الفعل</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fab fa-facebook"></i> Facebook React Bot</h1>
+            <p class="subtitle">أدخل حساباتك وأرسل ردود الفعل تلقائياً</p>
+        </header>
+
+        <div class="app-container">
+            <!-- قسم تسجيل الدخول -->
+            <div class="section" id="login-section">
+                <h2><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h2>
+                <div class="form-group">
+                    <label for="email">البريد الإلكتروني:</label>
+                    <input type="email" id="email" placeholder="example@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">كلمة المرور:</label>
+                    <input type="password" id="password" placeholder="********">
+                </div>
+                <button onclick="login()" id="login-btn" class="btn-primary">
+                    <i class="fas fa-key"></i> تسجيل الدخول واستخراج الكوكيز
+                </button>
+                <div id="login-result" class="result-box"></div>
+            </div>
+
+            <!-- قسم الحسابات المسجلة -->
+            <div class="section" id="accounts-section">
+                <h2><i class="fas fa-users"></i> الحسابات المسجلة</h2>
+                <div id="accounts-list" class="accounts-list">
+                    <p class="empty-message">لا توجد حسابات مسجلة بعد</p>
+                </div>
+                <button onclick="clearAccounts()" class="btn-danger">
+                    <i class="fas fa-trash"></i> مسح جميع الحسابات
+                </button>
+            </div>
+
+            <!-- قسم إعدادات التفاعل -->
+            <div class="section" id="react-section">
+                <h2><i class="fas fa-heart"></i> إعداد رد الفعل</h2>
+                <div class="form-group">
+                    <label>اختر نوع رد الفعل:</label>
+                    <div class="react-buttons">
+                        <button onclick="selectReact(2)" class="react-btn" data-react="like">
+                            <i class="far fa-thumbs-up"></i> إعجاب
+                        </button>
+                        <button onclick="selectReact(3)" class="react-btn" data-react="love">
+                            <i class="fas fa-heart"></i> حب
+                        </button>
+                        <button onclick="selectReact(4)" class="react-btn" data-react="care">
+                            <i class="fas fa-hands-helping"></i> رعاية
+                        </button>
+                        <button onclick="selectReact(5)" class="react-btn" data-react="haha">
+                            <i class="far fa-laugh-squint"></i> ضحك
+                        </button>
+                        <button onclick="selectReact(6)" class="react-btn" data-react="wow">
+                            <i class="far fa-surprise"></i> تعجب
+                        </button>
+                        <button onclick="selectReact(7)" class="react-btn" data-react="sad">
+                            <i class="far fa-sad-tear"></i> حزن
+                        </button>
+                        <button onclick="selectReact(8)" class="react-btn" data-react="angry">
+                            <i class="far fa-angry"></i> غضب
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="post-id">معرف المنشور (Post ID):</label>
+                    <input type="text" id="post-id" placeholder="مثال: 667659801564752">
+                    <small class="help-text">
+                        يمكنك الحصول عليه من رابط المنشور:<br>
+                        https://facebook.com/.../posts/<strong>POST_ID</strong>
+                    </small>
+                </div>
+                <button onclick="sendReactions()" id="send-btn" class="btn-success">
+                    <i class="fas fa-paper-plane"></i> إرسال ردود الفعل
+                </button>
+            </div>
+
+            <!-- قسم النتائج -->
+            <div class="section" id="results-section">
+                <h2><i class="fas fa-chart-bar"></i> النتائج</h2>
+                <div id="results" class="results-container">
+                    <div class="status-box">
+                        <i class="fas fa-info-circle"></i>
+                        <p>سيظهر هنا سجل العمليات والنتائج</p>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <span class="stat-label">الحسابات:</span>
+                        <span id="account-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">رد الفعل:</span>
+                        <span id="selected-react" class="stat-value">إعجاب</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Facebook React Bot v1.0 &copy; 2024 | للاستخدام الأخلاقي فقط</p>
+            <p class="warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                لا تخزن كلمات المرور. يتم استخدامها للجلسة الحالية فقط.
+            </p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
