@@ -11,45 +11,76 @@
     <div class="container">
         <header>
             <h1><i class="fab fa-facebook"></i> Facebook React Bot</h1>
-            <p class="subtitle">أدخل حساباتك وأرسل ردود الفعل تلقائياً</p>
+            <p class="subtitle">أدخل كوكيز الحسابات وأرسل ردود الفعل تلقائياً</p>
         </header>
 
         <div class="app-container">
-            <!-- قسم تسجيل الدخول -->
-            <div class="section" id="login-section">
-                <h2><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h2>
+            <!-- قسم إضافة الكوكيز -->
+            <div class="section" id="cookies-section">
+                <h2><i class="fas fa-cookie-bite"></i> إضافة الكوكيز</h2>
+                
                 <div class="form-group">
-                    <label for="email">البريد الإلكتروني:</label>
-                    <input type="email" id="email" placeholder="example@email.com">
+                    <label>الطريقة 1: إضافة كوكي واحدة</label>
+                    <textarea id="single-cookie" rows="3" 
+                        placeholder="الصق الكوكيز هنا (مثال: c_user=123; xs=abc...)"></textarea>
+                    <button onclick="addSingleCookie()" class="btn-small">
+                        <i class="fas fa-plus"></i> إضافة كوكي
+                    </button>
                 </div>
+                
                 <div class="form-group">
-                    <label for="password">كلمة المرور:</label>
-                    <input type="password" id="password" placeholder="********">
+                    <label>الطريقة 2: إضافة عدة كوكيز (سطر لكل كوكي)</label>
+                    <textarea id="multi-cookies" rows="5" 
+                        placeholder="c_user=123; xs=abc...
+c_user=456; xs=def...
+c_user=789; xs=ghi..."></textarea>
+                    <button onclick="addMultipleCookies()" class="btn-small">
+                        <i class="fas fa-layer-group"></i> إضافة جميع الكوكيز
+                    </button>
                 </div>
-                <button onclick="login()" id="login-btn" class="btn-primary">
-                    <i class="fas fa-key"></i> تسجيل الدخول واستخراج الكوكيز
-                </button>
-                <div id="login-result" class="result-box"></div>
+                
+                <div class="form-group">
+                    <label>الطريقة 3: استيراد من الملف (JSON)</label>
+                    <input type="file" id="cookie-file" accept=".json,.txt" style="display: none;">
+                    <button onclick="document.getElementById('cookie-file').click()" class="btn-small">
+                        <i class="fas fa-file-import"></i> اختر ملف
+                    </button>
+                    <small class="help-text">
+                        يمكنك تصدير الكوكيز من أدوات المطورين (F12) → Application → Cookies
+                    </small>
+                </div>
+                
+                <div id="cookie-result" class="result-box"></div>
             </div>
 
-            <!-- قسم الحسابات المسجلة -->
+            <!-- قسم الحسابات -->
             <div class="section" id="accounts-section">
-                <h2><i class="fas fa-users"></i> الحسابات المسجلة</h2>
+                <h2><i class="fas fa-users"></i> الحسابات المضافة (<span id="account-count">0</span>)</h2>
                 <div id="accounts-list" class="accounts-list">
-                    <p class="empty-message">لا توجد حسابات مسجلة بعد</p>
+                    <p class="empty-message">لا توجد حسابات مضافة بعد</p>
                 </div>
-                <button onclick="clearAccounts()" class="btn-danger">
-                    <i class="fas fa-trash"></i> مسح جميع الحسابات
-                </button>
+                
+                <div class="actions">
+                    <button onclick="clearAccounts()" class="btn-danger">
+                        <i class="fas fa-trash"></i> مسح الكل
+                    </button>
+                    <button onclick="exportCookies()" class="btn-secondary">
+                        <i class="fas fa-download"></i> تصدير
+                    </button>
+                    <button onclick="testAllCookies()" class="btn-info">
+                        <i class="fas fa-check-circle"></i> اختبار الكل
+                    </button>
+                </div>
             </div>
 
             <!-- قسم إعدادات التفاعل -->
             <div class="section" id="react-section">
                 <h2><i class="fas fa-heart"></i> إعداد رد الفعل</h2>
+                
                 <div class="form-group">
                     <label>اختر نوع رد الفعل:</label>
                     <div class="react-buttons">
-                        <button onclick="selectReact(2)" class="react-btn" data-react="like">
+                        <button onclick="selectReact(2)" class="react-btn active" data-react="like">
                             <i class="far fa-thumbs-up"></i> إعجاب
                         </button>
                         <button onclick="selectReact(3)" class="react-btn" data-react="love">
@@ -72,6 +103,7 @@
                         </button>
                     </div>
                 </div>
+                
                 <div class="form-group">
                     <label for="post-id">معرف المنشور (Post ID):</label>
                     <input type="text" id="post-id" placeholder="مثال: 667659801564752">
@@ -80,42 +112,137 @@
                         https://facebook.com/.../posts/<strong>POST_ID</strong>
                     </small>
                 </div>
+                
+                <div class="form-group">
+                    <label>تأخير بين الحسابات (ثانية):</label>
+                    <input type="range" id="delay-range" min="1" max="10" value="2" step="0.5">
+                    <span id="delay-value">2 ثانية</span>
+                </div>
+                
                 <button onclick="sendReactions()" id="send-btn" class="btn-success">
-                    <i class="fas fa-paper-plane"></i> إرسال ردود الفعل
+                    <i class="fas fa-paper-plane"></i> بدء الإرسال (0 حساب)
                 </button>
             </div>
 
             <!-- قسم النتائج -->
             <div class="section" id="results-section">
                 <h2><i class="fas fa-chart-bar"></i> النتائج</h2>
+                
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-label">الإجمالي:</span>
+                        <span id="total-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ناجح:</span>
+                        <span id="success-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">فاشل:</span>
+                        <span id="fail-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">نشط:</span>
+                        <span id="active-react" class="stat-value">إعجاب</span>
+                    </div>
+                </div>
+                
                 <div id="results" class="results-container">
                     <div class="status-box">
                         <i class="fas fa-info-circle"></i>
-                        <p>سيظهر هنا سجل العمليات والنتائج</p>
+                        <p>انتظر هنا سجل العمليات والنتائج</p>
                     </div>
                 </div>
-                <div class="stats">
-                    <div class="stat">
-                        <span class="stat-label">الحسابات:</span>
-                        <span id="account-count" class="stat-value">0</span>
+                
+                <div class="actions">
+                    <button onclick="clearResults()" class="btn-small">
+                        <i class="fas fa-broom"></i> مسح النتائج
+                    </button>
+                    <button onclick="copyResults()" class="btn-small">
+                        <i class="fas fa-copy"></i> نسخ النتائج
+                    </button>
+                </div>
+            </div>
+
+            <!-- قسم التعليمات -->
+            <div class="section" id="help-section">
+                <h2><i class="fas fa-question-circle"></i> كيفية الحصول على الكوكيز</h2>
+                
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <div class="step-content">
+                            <h4>فتح أدوات المطورين</h4>
+                            <p>اضغط F12 أو بزر الماوس الأيمن → "فحص العنصر"</p>
+                        </div>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">رد الفعل:</span>
-                        <span id="selected-react" class="stat-value">إعجاب</span>
+                    
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <div class="step-content">
+                            <h4>الذهاب إلى علامة التبويب Application</h4>
+                            <p>ابحث عن Storage → Cookies → https://www.facebook.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <div class="step-content">
+                            <h4>نسخ الكوكيز</h4>
+                            <p>انسخ جميع الكوكيز (خاصة c_user و xs) ثم الصقها في المربع أعلاه</p>
+                            <code>c_user=123456789; xs=abc123def456...</code>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        <div class="step-content">
+                            <h4>كوكيز مهمة مطلوبة</h4>
+                            <ul>
+                                <li><strong>c_user</strong>: معرف المستخدم</li>
+                                <li><strong>xs</strong>: رمز الجلسة</li>
+                                <li><strong>fr</strong>: (مهم للتفاعلات)</li>
+                                <li><strong>sb</strong>: (مهم للتفاعلات)</li>
+                                <li><strong>datr</strong>: (مهم للأمان)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <h4>تحذيرات هامة:</h4>
+                        <ul>
+                            <li>لا تشارك كوكيزك مع أحد</li>
+                            <li>الكوكيز تنتهي بعد فترة (عادة 3 أشهر)</li>
+                            <li>استخدم حسابات نشطة لتجنب الحظر</li>
+                            <li>لا تستخدم أكثر من 5-10 حسابات في وقت واحد</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
 
         <footer>
-            <p>Facebook React Bot v1.0 &copy; 2024 | للاستخدام الأخلاقي فقط</p>
-            <p class="warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                لا تخزن كلمات المرور. يتم استخدامها للجلسة الحالية فقط.
-            </p>
+            <p>Facebook React Bot v2.0 &copy; 2024 | للاستخدام الأخلاقي فقط</p>
+            <div class="footer-links">
+                <a href="#" onclick="showHelp()"><i class="fas fa-help"></i> مساعدة</a>
+                <a href="#" onclick="resetApp()"><i class="fas fa-redo"></i> إعادة تعيين</a>
+                <a href="#" onclick="showAbout()"><i class="fas fa-info"></i> حول</a>
+            </div>
         </footer>
+    </div>
+
+    <!-- نافذة النتائج التفصيلية -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3>تفاصيل العملية</h3>
+            <div id="modal-content"></div>
+        </div>
     </div>
 
     <script src="script.js"></script>
 </body>
-</html>
+    </html>
